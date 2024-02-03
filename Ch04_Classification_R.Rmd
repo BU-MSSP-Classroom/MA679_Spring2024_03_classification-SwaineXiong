@@ -223,65 +223,51 @@ table(Test_COVID$SURVIVED)/nrow(Test_COVID)
 
 Q1. What metric will you use? Why? 
 
-Your code:
-```{r,echo=TRUE}
-#
-#
-```
 
 Your answer:
 
 ~~~
-Please write your answer in full sentences.
-
-
+Confusion matrix. A confusion matrix is crucial in medical testing because it provides a detailed look at a test's accuracy, including the rates of true positives, true negatives, false positives, and false negatives. This information is vital for evaluating the reliability of the test, understanding the balance between detecting diseases and avoiding misdiagnosis, and ultimately improving patient care and public health decisions. It allows healthcare professionals to make informed choices about the test's use and identify areas for improvement.
 ~~~
 
 Q2. What was your best performing model?  
 
+
 Your code:
 ```{r,echo=TRUE}
-#
-#
+model <- glm(SURVIVED ~ USMER + MEDICAL_UNIT + SEX + INTUBED + PNEUMONIA + AGE + PREGNANT + COPD + OBESITY + CLASIFFICATION_FINAL , data = Covid_Data, family = binomial)
+summary(model)
+
 ```
 
 Your answer:
 
 ~~~
-Please write your answer in full sentences.
-
+The model is shown above.
 
 ~~~
 
 Q3. Explain how you got the model in detail.
 
 
-Your code:
-```{r,echo=TRUE}
-#
-#
-```
 
 Your answer:
 
 ~~~
-Please write your answer in full sentences.
+1. Add all possible predictors into the model
+2. Deduct predictors that are not significant
+3. Repeat this step until all predictors are significant
 
 
 ~~~
 
 Q4. Based on your model, what factor seems to be important in deciding if a patient survives or not.
 
-Your code:
-```{r,echo=TRUE}
-#
-#
-```
 
 Your answer:
 
 ~~~
-Please write your answer in full sentences.
+USMER, MEDICAL_UNIT, SEX, INTUBED, PNEUMONIA, AGE, PREGNANT, COPD, OBESITY, CLASIFFICATION_FINAL are factors seem to be important in deciding if a patient survives or not.
 
 
 ~~~
@@ -296,50 +282,73 @@ In this problem, you will develop a model to predict whether a given car gets hi
 
 Your code:
 ```{r,echo=TRUE}
-#
-#
+auto <- read.csv("Auto.csv")
+median_mpg <- median(auto$mpg)
+auto$mpg01 <- ifelse(auto$mpg > median_mpg, 1, 0)
+auto <- auto[, !colnames(auto) %in% c("name")]
 ```
 
-Your answer:
-
-~~~
-Please write your answer in full sentences.
-
-
-~~~
 
 
 (b) Explore the data graphically in order to investigate the association between `mpg01` and the other features. Which other features seem most likely to be useful in predicting `mpg01`? Scatterplots and boxplots may be useful tools to answer this question. Describe your findings.
+
+```{r}
+continuous_predictors <- c("displacement", "horsepower", "weight", "acceleration")
+
+par(mfrow = c(2, 2)) 
+
+for (var in continuous_predictors) {
+  plot(auto[[var]], auto$mpg01, main = paste("mpg01 vs", var), xlab = var, ylab = "mpg01", pch = 19)
+}
+par(mfrow = c(1, 1))
+
+categorical_predictors <- c("cylinders", "year", "origin")
+par(mfrow = c(2, 2)) 
+for (var in categorical_predictors) {
+  boxplot(auto[[var]]~auto$mpg01, main = paste("mpg01 vs", var), xlab = "mpg01", ylab = var)
+}
+par(mfrow = c(1, 1))
+
+```
+Your answer:
+
+~~~
+ Displacement, horsepower, and weight show a clear relationship with the binary variable mpg01 and seem most likely to be useful in predicting mpg01. Acceleration shows a potential relationship, but it seems to be a weaker predictor compared to the others. Cylinders and year appear to be the most promising features for predicting mpg01, with origin potentially providing some additional predictive power. 
+
+
+~~~
 
 (c) Split the data into a training set and a test set.
 
 Your code:
 ```{r,echo=TRUE}
-#
-#
+library(caret)
+splitIndex <- createDataPartition(auto$mpg01, p = 0.7, list = FALSE)
+trainingSet <- auto[splitIndex, ]
+testSet <- auto[-splitIndex, ]
 ```
 
-Your answer:
-
-~~~
-Please write your answer in full sentences.
-
-
-~~~
 
 
 (d) Perform LDA on the training data in order to predict `mpg01` using the variables that seemed most associated with `mpg01` in (b). What is the test error of the model obtained?
 
 Your code:
 ```{r,echo=TRUE}
-#
-#
+lda <- lda(mpg01 ~ cylinders + displacement + horsepower + weight + year, data = trainingSet)
+summary(lda)
+pred_lda <- predict(lda,testSet)
+predicted_classes <- pred_lda$class
+confusion_matrix <- table(Predicted = predicted_classes, Actual = testSet$mpg01)
+correct_predictions <- sum(diag(confusion_matrix))
+total_predictions <- sum(confusion_matrix)
+test_error_rate <- 1 - (correct_predictions / total_predictions)
+test_error_rate
 ```
 
 Your answer:
 
 ~~~
-Please write your answer in full sentences.
+The test error is 0.06896552.
 
 
 ~~~
@@ -349,14 +358,21 @@ Please write your answer in full sentences.
 
 Your code:
 ```{r,echo=TRUE}
-#
-#
+qda <- qda(mpg01 ~ cylinders + displacement + horsepower + weight + year, data = trainingSet)
+summary(qda)
+pred_qda <- predict(qda,testSet)
+qpredicted_classes <- pred_qda$class
+qconfusion_matrix <- table(Predicted = qpredicted_classes, Actual = testSet$mpg01)
+qcorrect_predictions <- sum(diag(qconfusion_matrix))
+qtotal_predictions <- sum(qconfusion_matrix)
+qtest_error_rate <- 1 - (qcorrect_predictions / qtotal_predictions)
+qtest_error_rate
 ```
 
 Your answer:
 
 ~~~
-Please write your answer in full sentences.
+The test error is 0.05172414.
 
 
 ~~~
@@ -366,14 +382,21 @@ Please write your answer in full sentences.
 
 Your code:
 ```{r,echo=TRUE}
-#
-#
+logis <- glm(mpg01 ~ cylinders + displacement + horsepower + weight + year, data = trainingSet,family = binomial)
+summary(logis)
+pred_logis <- predict(logis,testSet)
+logit_predictions <- ifelse(pred_logis > 0.5, 1, 0)
+lconfusion_matrix <- table(Predicted = logit_predictions, Actual = testSet$mpg01)
+lcorrect_predictions <- sum(diag(lconfusion_matrix))
+ltotal_predictions <- sum(lconfusion_matrix)
+ltest_error_rate <- 1 - (lcorrect_predictions / ltotal_predictions)
+ltest_error_rate
 ```
 
 Your answer:
 
 ~~~
-Please write your answer in full sentences.
+The test error is 0.09482759.
 
 
 ~~~
@@ -383,14 +406,20 @@ Please write your answer in full sentences.
 
 Your code:
 ```{r,echo=TRUE}
-#
-#
+library(e1071)
+nb_model <- naiveBayes(mpg01 ~ cylinders + displacement + horsepower + weight + year, data = trainingSet)
+nb_predictions <- predict(nb_model, newdata = testSet)
+nconfusion_matrix <- table(Predicted = nb_predictions, Actual = testSet$mpg01)
+ncorrect_predictions <- sum(diag(nconfusion_matrix))
+ntotal_predictions <- sum(nconfusion_matrix)
+ntest_error_rate <- 1 - (ncorrect_predictions / ntotal_predictions)
+ntest_error_rate
 ```
 
 Your answer:
 
 ~~~
-Please write your answer in full sentences.
+The test error is 0.06034483.
 
 
 ~~~
@@ -400,14 +429,20 @@ Please write your answer in full sentences.
 
 Your code:
 ```{r,echo=TRUE}
-#
-#
+library(class)
+train_predictors <- subset(trainingSet, select = -c(mpg01))
+test_predictors <- subset(testSet, select = -c(mpg01))
+train_response <- trainingSet$mpg01
+k <- 5
+knn_predictions <- knn(train = train_predictors, test = test_predictors, cl = train_response, k = k)
+knn_test_error <- mean(knn_predictions != testSet$mpg01)
+knn_test_error
 ```
 
 Your answer:
 
 ~~~
-Please write your answer in full sentences.
+The test error is 0.06896552.
 
 
 ~~~
